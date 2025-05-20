@@ -2,6 +2,7 @@ from mcp.server.fastmcp import FastMCP
 import requests
 from dotenv import load_dotenv
 import os
+import uuid
 
 load_dotenv()
 
@@ -32,11 +33,6 @@ balance_url = f"{url}balance"
 accounts_url = f"{url}accounts"
 pots_url = f"{url}pots"
 
-headers = {
-    "Authorization": f"Bearer {access_token}",
-    "Content-Type": "application/json",
-}
-
 @mcp.tool("balance")
 def get_balance(account_type: str = "personal") -> dict:
     """
@@ -59,7 +55,12 @@ def get_balance(account_type: str = "personal") -> dict:
     
     if not selected_account_id:
         selected_account_id = account_types["personal"]
-    
+        
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
     params = {
         "account_id": selected_account_id,
     }
@@ -96,6 +97,11 @@ def get_pots_information(account_type: str = "personal") -> dict:
     
     if not selected_account_id:
         selected_account_id = account_types["personal"]
+        
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
     
     params = {
         "current_account_id": selected_account_id,
@@ -111,6 +117,60 @@ def get_pots_information(account_type: str = "personal") -> dict:
 
     return pots
 
+@mcp.tool("pot_deposit")
+def pot_deposit(
+        pot_id: str,
+        amount: int,
+        account_type: str = "personal"
+) -> dict:
+
+    """
+    Deposit money into a pot.
+    
+    Parameters:
+    pot_id (str): The ID of the pot to deposit money into.
+    amount (int): The amount to deposit in the lower denomination of the specified Monzo account's currency.
+                  I.e. GBP, the amount is in pence. E.g. 9155 is £91.55.
+    account_type (str): Type of account to deposit into. 
+                        Options:
+                            - "default" (default)
+                            - "personal"
+                            - "prepaid"
+                            - "flex"
+                            - "rewards"
+                            - "joint"
+    
+    Returns:
+    dict: The response from the Monzo API.
+    """
+    url = f"{pots_url}/{pot_id}/deposit"
+
+    dedupe_id = str(uuid.uuid4())
+        
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    
+    data = {
+        "source_account_id": account_types.get(account_type, account_types["personal"]),
+        "amount": amount,
+        "dedupe_id": dedupe_id,
+    }
+
+    response = requests.put(url, headers=headers, data=data)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
+    
+    return response.json()
+
+# if __name__ == "__main__":
+#     print(pot_deposit(
+#         pot_id="pot_00009tfiy0hjEpOGbOuDi5",
+#         amount=100,
+#         account_type="personal"
+#     ))
 
 
 
