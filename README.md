@@ -17,14 +17,24 @@ uv install
 
 Create a `.env` file in the project directory with your Monzo credentials:
 
+> [!NOTE]
+> To get your credentials, follow the instructions in the [official Monzo Dev API Docs](https://docs.monzo.com/)
+
 ```
 MONZO_ACCESS_TOKEN='your_access_token'
 MONZO_USER_ID='your_user_id'
-MONZO_ACCOUNT_ID='your_account_id'
+MONZO_ACCOUNT_ID='your_default_account_id'
+
+# Add specific account IDs for different account types
+MONZO_UK_PREPAID_PERSONAL_ACCOUNT_ID='your_prepaid_account_id'
+MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID='your_personal_account_id'
+MONZO_UK_MONZO_FLEX_PERSONAL_ACCOUNT_ID='your_flex_account_id'
+MONZO_UK_REWARDS_PERSONAL_ACCOUNT_ID='your_rewards_account_id'
+MONZO_UK_RETAIL_JOINT_JOINT_ACCOUNT_ID='your_joint_account_id'
 ```
 
 > [!NOTE]
-> To get your credentials, follow the instructions in the [official Monzo Dev API Docs](https://docs.monzo.com/)
+> I recommend getting the account IDs and adding them to your dotenv file to have a smoother experience with the server and reduce the number of API calls. This can also be found in the [official Monzo Dev API Docs](https://docs.monzo.com/).
 
 ## 🔧 Setup with Claude Desktop
 
@@ -65,19 +75,43 @@ Add the server to your Claude Desktop configuration file located at `~/Library/A
 
 1. Restart Claude Desktop after installation.
 2. Open the app and start a new conversation.
-3. You can now ask Claude about your Monzo account balance.
+3. You can now ask Claude about your Monzo accounts:
+   - "What's my current balance?"
+   - "How much money do I have in my joint account?"
+   - "Show me all my Monzo accounts"
 
 ## 📊 Available Functions
 
 ### balance
 
-Returns your current Monzo account balance and currency.
+Returns the balance, spending today, and currency for a specified account type.
 
-```python
-response = {
-    "balance": 91.55,  # Amount in decimal (e.g., £91.55)
-    "currency": "GBP"
-}
+Parameters:
+
+- `account_type` (optional): Type of account to check balance for. Options: "default", "personal", "prepaid", "flex", "rewards", "joint"
+
+Example requests:
+
+```
+What's my current balance?
+How much money do I have in my joint account?
+What's the balance of my flex account?
+```
+
+### pots
+
+Returns the list of pots for a specified account type.
+
+Parameters:
+
+- `account_type` (optional): Type of account to check pots for. Options: "default", "personal", "prepaid", "flex", "rewards", "joint"
+
+Example requests:
+
+```
+Show me my pots
+How many pots do I have?
+How much money do I have in my "Savings" pot?
 ```
 
 ## ❓ FAQ
