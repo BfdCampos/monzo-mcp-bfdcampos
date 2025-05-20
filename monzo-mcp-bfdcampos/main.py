@@ -121,7 +121,8 @@ def get_pots_information(account_type: str = "personal") -> dict:
 def pot_deposit(
         pot_id: str,
         amount: int,
-        account_type: str = "personal"
+        account_type: str = "personal",
+        triggered_by: str = "mcp"
 ) -> dict:
 
     """
@@ -139,13 +140,14 @@ def pot_deposit(
                             - "flex"
                             - "rewards"
                             - "joint"
+    triggered_by (str): The source of the deposit. Default is "mcp".
     
     Returns:
     dict: The response from the Monzo API.
     """
     url = f"{pots_url}/{pot_id}/deposit"
 
-    dedupe_id = str(uuid.uuid4())
+    dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -156,6 +158,7 @@ def pot_deposit(
         "source_account_id": account_types.get(account_type, account_types["personal"]),
         "amount": amount,
         "dedupe_id": dedupe_id,
+        "notes": details,
     }
 
     response = requests.put(url, headers=headers, data=data)
@@ -169,7 +172,8 @@ def pot_deposit(
 def pot_withdraw(
         pot_id: str,
         amount: int,
-        account_type: str = "personal"
+        account_type: str = "personal",
+        triggered_by: str = "mcp"
 ) -> dict:
     """
     Withdraw money from a pot.
@@ -186,13 +190,14 @@ def pot_withdraw(
                             - "flex"
                             - "rewards"
                             - "joint"
+    triggered_by (str): The source of the withdrawal. Default is "mcp".
     
     Returns:
     dict: The response from the Monzo API.
     """
     url = f"{pots_url}/{pot_id}/withdraw"
 
-    dedupe_id = str(uuid.uuid4())
+    dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -212,12 +217,13 @@ def pot_withdraw(
     
     return response.json()
 
-# if __name__ == "__main__":
-#     print(pot_deposit(
-#         pot_id="pot_00009tfiy0hjEpOGbOuDi5",
-#         amount=100,
-#         account_type="personal"
-#     ))
+if __name__ == "__main__":
+    print(pot_deposit(
+        pot_id="pot_00009tfiy0hjEpOGbOuDi5",
+        amount=100,
+        account_type="personal",
+        triggered_by="python_script"
+    ))
 
 
 
