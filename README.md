@@ -79,6 +79,8 @@ Add the server to your Claude Desktop configuration file located at `~/Library/A
    - "What's my current balance?"
    - "How much money do I have in my joint account?"
    - "Show me all my Monzo accounts"
+   - "Move £50 from my personal account to my Savings pot"
+   - "Show me my transactions from today"
 
 ## 📊 Available Functions
 
@@ -114,6 +116,58 @@ How many pots do I have?
 How much money do I have in my "Savings" pot?
 ```
 
+### pot_deposit
+
+Deposit money from an account into a pot.
+
+Parameters:
+- `pot_id` (required): The ID of the pot to deposit money into
+- `amount` (required): The amount to deposit in pence (e.g., 1000 for £10.00)
+- `account_type` (optional): The account to withdraw from. Default is "personal"
+- `triggered_by` (optional): Source identifier for the transaction. Default is "mcp"
+
+Example requests:
+
+```
+Add £25 to my Savings pot
+Move £10 from my personal account to my Holiday pot
+```
+
+### pot_withdraw
+
+Withdraw money from a pot back to an account.
+
+Parameters:
+- `pot_id` (required): The ID of the pot to withdraw money from
+- `amount` (required): The amount to withdraw in pence (e.g., 1000 for £10.00)
+- `account_type` (optional): The account to deposit into. Default is "personal"
+- `triggered_by` (optional): Source identifier for the transaction. Default is "mcp"
+
+Example requests:
+
+```
+Take £25 from my Savings pot
+Withdraw £10 from my Holiday pot to my personal account
+```
+
+### list_transactions
+
+Lists transactions for a specified account.
+
+Parameters:
+- `account_type` (optional): Type of account to list transactions for. Default is "personal"
+- `since` (optional): Start date for transactions in ISO 8601 format (e.g., "2025-05-20T00:00:00Z")
+- `before` (optional): End date for transactions in ISO 8601 format
+- `limit` (optional): Maximum number of transactions to return. Default is 1000
+
+Example requests:
+
+```
+Show me my recent transactions
+What transactions do I have from today?
+List all transactions from my joint account this month
+```
+
 ## ❓ FAQ
 
 <details><summary>My Claude Desktop is not detecting the server</summary>
@@ -130,6 +184,14 @@ How much money do I have in my "Savings" pot?
 
 - LLMs like Claude may not always use the MCP server for every request. Try rephrasing your question, specifically asking Claude to check your Monzo balance using the Monzo MCP tool.
 - You can check if there were any errors by looking at the logs in `~/Library/Logs/Claude/mcp-server-Monzo.log`.
+
+</details>
+
+<details><summary>How do pot deposits and withdrawals work?</summary>
+
+- When you deposit money into a pot or withdraw from a pot, the MCP creates a unique dedupe_id that includes the "triggered_by" parameter.
+- This helps identify transactions and prevents accidental duplicate transactions.
+- The default "triggered_by" value is "mcp", but you can customise this to track different sources of pot transfers.
 
 </details>
 
