@@ -165,6 +165,53 @@ def pot_deposit(
     
     return response.json()
 
+@mcp.tool("pot_withdraw")
+def pot_withdraw(
+        pot_id: str,
+        amount: int,
+        account_type: str = "personal"
+) -> dict:
+    """
+    Withdraw money from a pot.
+    
+    Parameters:
+    pot_id (str): The ID of the pot to withdraw money from.
+    amount (int): The amount to withdraw in the lower denomination of the specified Monzo account's currency.
+                  I.e. GBP, the amount is in pence. E.g. 9155 is £91.55.
+    account_type (str): Type of account to withdraw from. 
+                        Options:
+                            - "default" (default)
+                            - "personal"
+                            - "prepaid"
+                            - "flex"
+                            - "rewards"
+                            - "joint"
+    
+    Returns:
+    dict: The response from the Monzo API.
+    """
+    url = f"{pots_url}/{pot_id}/withdraw"
+
+    dedupe_id = str(uuid.uuid4())
+        
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    
+    data = {
+        "destination_account_id": account_types.get(account_type, account_types["personal"]),
+        "amount": amount,
+        "dedupe_id": dedupe_id,
+    }
+
+    response = requests.put(url, headers=headers, data=data)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
+    
+    return response.json()
+
 # if __name__ == "__main__":
 #     print(pot_deposit(
 #         pot_id="pot_00009tfiy0hjEpOGbOuDi5",
