@@ -269,6 +269,75 @@ def list_transactions(
 
     return transactions
 
+@mcp.tool("retrieve_transaction")
+def retrieve_transaction(
+        transaction_id: str,
+        expand: str = "merchant"
+    ) -> dict:
+    """
+    Returns the details of a specific transaction.
+    
+    Parameters:
+    transaction_id (str): The ID of the transaction to retrieve.
+    expand (str): Optional. The type of data to expand. Default is "merchant".
+    """
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    params = {
+        "expand[]": expand,
+    }
+
+    response = requests.get(f"{transactions_url}/{transaction_id}", headers=headers, params=params)
+
+    if response.status_code != 200:
+        raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
+
+    response_data = response.json()
+
+    return response_data
+
+@mcp.tool("annotate_transaction")
+def annotate_transaction(
+        transaction_id: str,
+        metadata_key: str = "notes",
+        metadata_value: str = "",
+        delete_note: bool = False
+    ) -> dict:
+    """
+    Annotate a transaction with a note or metadata key-value pair.
+
+    To delete a note, set delete_note to True and use the default metadata_key "notes" and metadata_value "".
+    To delete another key, set its value to an empty string.
+    
+    Parameters:
+    transaction_id (str): The ID of the transaction to annotate.
+    metadata_key (str): The key to annotate. Default is "notes".
+    metadata_value (str): The value to annotate. Default is an empty string.
+    delete_note (bool): Whether to delete the note. Default is False to prevent accidental deletion of note.
+    """
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
+    data = {} 
+
+    data[f"metadata[{metadata_key}]"] = metadata_value
+
+    response = requests.patch(f"{transactions_url}/{transaction_id}", headers=headers, data=data)
+
+    if response.status_code != 200:
+        raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
+
+    response_data = response.json()
+
+    return response_data
+
 
 
 
