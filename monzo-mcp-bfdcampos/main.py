@@ -32,6 +32,7 @@ url = "https://api.monzo.com/"
 balance_url = f"{url}balance"
 accounts_url = f"{url}accounts"
 pots_url = f"{url}pots"
+transactions_url = f"{url}transactions"
 
 @mcp.tool("balance")
 def get_balance(account_type: str = "personal") -> dict:
@@ -216,13 +217,57 @@ def pot_withdraw(
     
     return response.json()
 
-if __name__ == "__main__":
-    print(pot_deposit(
-        pot_id="pot_00009tfiy0hjEpOGbOuDi5",
-        amount=100,
-        account_type="personal",
-        triggered_by="python_script"
-    ))
+@mcp.tool("list_transactions")
+def list_transactions(
+        account_type: str = "personal",
+        since: str = None,
+        before: str = None,
+        limit: int = 1000
+    ) -> dict:
+    """
+    Returns a list of transactions for the specified Monzo account.
+    
+    Parameters:
+    account_type (str): Type of account to list transactions for. 
+                        Options:
+                            - "default" (default)
+                            - "personal"
+                            - "prepaid"
+                            - "flex"
+                            - "rewards"
+                            - "joint"
+    since (str): The start date for the transactions in ISO 8601 format. Default is None.
+    before (str): The end date for the transactions in ISO 8601 format. Default is None.
+    limit (int): The maximum number of transactions to return. Default is 1000.
+    """
+
+    account_type = account_type.lower()
+
+    selected_account_id = account_types.get(account_type)
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    params = {
+        "account_id": selected_account_id,
+        "since": since,
+        "before": before,
+        "limit": limit,
+        "expand[]": "merchant",
+    }
+
+    response = requests.get(transactions_url, headers=headers, params=params)
+
+    if response.status_code != 200:
+        raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
+
+    response_data = response.json()
+
+    transactions = response_data.get("transactions", [])
+
+    return transactions
 
 
 
