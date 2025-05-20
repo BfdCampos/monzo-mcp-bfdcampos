@@ -158,7 +158,6 @@ def pot_deposit(
         "source_account_id": account_types.get(account_type, account_types["personal"]),
         "amount": amount,
         "dedupe_id": dedupe_id,
-        "notes": details,
     }
 
     response = requests.put(url, headers=headers, data=data)
