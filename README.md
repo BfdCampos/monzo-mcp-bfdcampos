@@ -254,7 +254,12 @@ Remove the note from my last transaction
 
 </details>
 
+<details>
+<summary>
+
 ## 📦 Missing Functions from the Monzo MCP present in the Monzo API
+
+</summary>
 
 - [Create feed item](https://docs.monzo.com/#create-feed-item)
 - [Upload Attachment](https://docs.monzo.com/#upload-attachment)
@@ -268,6 +273,8 @@ Remove the note from my last transaction
 - [Deleting a Webhook](https://docs.monzo.com/#deleting-a-webhook)
 - [Transaction Created](https://docs.monzo.com/#transaction-created)
 - [General Payment Initiation for outside your own Monzo Account transfers](https://docs.monzo.com/#payment-initiation-services-api)
+
+</details>
 
 ## ❓ FAQ
 
