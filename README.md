@@ -96,6 +96,7 @@ Returns the balance, spending today, and currency for a specified account type.
 Parameters:
 
 - `account_type` (optional): Type of account to check balance for. Options: "default", "personal", "prepaid", "flex", "rewards", "joint"
+- `total_balance` (optional): If set to true, returns the total balance for the account. Default is false
 
 Example requests:
 

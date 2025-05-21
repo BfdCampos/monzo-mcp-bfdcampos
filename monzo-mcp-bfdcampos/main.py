@@ -35,7 +35,7 @@ pots_url = f"{url}pots"
 transactions_url = f"{url}transactions"
 
 @mcp.tool("balance")
-def get_balance(account_type: str = "personal") -> dict:
+def get_balance(account_type: str = "personal", total_balance: bool = False) -> dict:
     """
     Returns the information about an account including the balance in the lower denomination 
     of the specified Monzo account's currency. I.e. GBP, the balance is in pence. E.g. 9155 is £91.55.
@@ -49,6 +49,7 @@ def get_balance(account_type: str = "personal") -> dict:
                             - "flex"
                             - "rewards"
                             - "joint"
+    total_balance (bool): If specifically asked for the total account balance, set this to True and it returns the total balance including flexible savings. Default is False.
     """
     account_type = account_type.lower()
     
@@ -72,6 +73,13 @@ def get_balance(account_type: str = "personal") -> dict:
         raise Exception(f"Error: {response_data.get('error', 'Unknown error')}")
 
     response_data = response.json()
+
+    if total_balance:
+        return response_data
+
+    # Remove total_balance and balance_including_flexible_savings from the main output
+    response_data.pop("total_balance", None)
+    response_data.pop("balance_including_flexible_savings", None)
 
     return response_data
 
