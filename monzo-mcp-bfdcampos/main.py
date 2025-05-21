@@ -141,7 +141,10 @@ def pot_deposit(
                             - "flex"
                             - "rewards"
                             - "joint"
-    triggered_by (str): The source of the deposit. Default is "mcp".
+    triggered_by (str): The source of the withdrawal. Default is "mcp". This is NOT a note field. Possible options are:
+                        - "mcp" (default)
+                        - "manual"
+                        - "api"
     
     Returns:
     dict: The response from the Monzo API.
@@ -190,7 +193,10 @@ def pot_withdraw(
                             - "flex"
                             - "rewards"
                             - "joint"
-    triggered_by (str): The source of the withdrawal. Default is "mcp".
+    triggered_by (str): The source of the withdrawal. Default is "mcp". This is NOT a note field. Possible options are:
+                        - "mcp" (default)
+                        - "manual"
+                        - "api"
     
     Returns:
     dict: The response from the Monzo API.
