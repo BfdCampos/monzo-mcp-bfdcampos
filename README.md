@@ -2,6 +2,21 @@
 
 A Model Context Protocol (MCP) server that provides access to your Monzo banking data through a Claude tool.
 
+## 🪧 Demo
+
+https://github.com/user-attachments/assets/ca3f9558-bc4b-460f-8658-99674f9c16b7
+
+<details>
+<summary>
+  
+### 🖼️ Result
+
+</summary>
+
+![monzo_mcp_bfdcampos_result](https://github.com/user-attachments/assets/c2305a5a-0dea-4c56-a05a-14ce13a22a74)
+
+</details>
+
 ## 🚀 Installation
 
 ```bash
