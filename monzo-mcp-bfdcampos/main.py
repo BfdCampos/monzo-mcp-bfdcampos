@@ -122,8 +122,7 @@ def get_pots_information(account_type: str = "personal") -> dict:
 def pot_deposit(
         pot_id: str,
         amount: int,
-        account_type: str = "personal",
-        triggered_by: str = "mcp"
+        account_type: str = "personal"
 ) -> dict:
 
     """
@@ -141,15 +140,13 @@ def pot_deposit(
                             - "flex"
                             - "rewards"
                             - "joint"
-    triggered_by (str): The source of the withdrawal. Default is "mcp". This is NOT a note field. Possible options are:
-                        - "mcp" (default)
-                        - "manual"
-                        - "api"
     
     Returns:
     dict: The response from the Monzo API.
     """
     url = f"{pots_url}/{pot_id}/deposit"
+
+    triggered_by = "mcp"
 
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         
@@ -175,8 +172,7 @@ def pot_deposit(
 def pot_withdraw(
         pot_id: str,
         amount: int,
-        account_type: str = "personal",
-        triggered_by: str = "mcp"
+        account_type: str = "personal"
 ) -> dict:
     """
     Withdraw money from a pot.
@@ -193,15 +189,13 @@ def pot_withdraw(
                             - "flex"
                             - "rewards"
                             - "joint"
-    triggered_by (str): The source of the withdrawal. Default is "mcp". This is NOT a note field. Possible options are:
-                        - "mcp" (default)
-                        - "manual"
-                        - "api"
     
     Returns:
     dict: The response from the Monzo API.
     """
     url = f"{pots_url}/{pot_id}/withdraw"
+
+    triggered_by = "mcp"
 
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         

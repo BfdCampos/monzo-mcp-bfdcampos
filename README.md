@@ -144,7 +144,6 @@ Parameters:
 - `pot_id` (required): The ID of the pot to deposit money into
 - `amount` (required): The amount to deposit in pence (e.g., 1000 for £10.00)
 - `account_type` (optional): The account to withdraw from. Default is "personal"
-- `triggered_by` (optional): Source identifier for the transaction. Default is "mcp"
 
 Example requests:
 
@@ -169,7 +168,6 @@ Parameters:
 - `pot_id` (required): The ID of the pot to withdraw money from
 - `amount` (required): The amount to withdraw in pence (e.g., 1000 for £10.00)
 - `account_type` (optional): The account to deposit into. Default is "personal"
-- `triggered_by` (optional): Source identifier for the transaction. Default is "mcp"
 
 Example requests:
 
