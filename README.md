@@ -84,7 +84,12 @@ Add the server to your Claude Desktop configuration file located at `~/Library/A
 
 ## 📊 Available Functions
 
-### balance
+<details>
+<summary>
+
+### 💷 [balance](https://docs.monzo.com/#balance)
+
+</summary>
 
 Returns the balance, spending today, and currency for a specified account type.
 
@@ -100,7 +105,14 @@ How much money do I have in my joint account?
 What's the balance of my flex account?
 ```
 
-### pots
+</details>
+
+<details>
+<summary>
+
+### 🍯 [pots](https://docs.monzo.com/#pots)
+
+</summary>
 
 Returns the list of pots for a specified account type.
 
@@ -116,11 +128,19 @@ How many pots do I have?
 How much money do I have in my "Savings" pot?
 ```
 
-### pot_deposit
+</details>
+
+<details>
+<summary>
+
+### 🪙 [pot_deposit](https://docs.monzo.com/#deposit-into-a-pot)
+
+</summary>
 
 Deposit money from an account into a pot.
 
 Parameters:
+
 - `pot_id` (required): The ID of the pot to deposit money into
 - `amount` (required): The amount to deposit in pence (e.g., 1000 for £10.00)
 - `account_type` (optional): The account to withdraw from. Default is "personal"
@@ -133,11 +153,19 @@ Add £25 to my Savings pot
 Move £10 from my personal account to my Holiday pot
 ```
 
-### pot_withdraw
+</details>
+
+<details>
+<summary>
+
+### 🏧 [pot_withdraw](https://docs.monzo.com/#withdraw-from-a-pot)
+
+</summary>
 
 Withdraw money from a pot back to an account.
 
 Parameters:
+
 - `pot_id` (required): The ID of the pot to withdraw money from
 - `amount` (required): The amount to withdraw in pence (e.g., 1000 for £10.00)
 - `account_type` (optional): The account to deposit into. Default is "personal"
@@ -150,11 +178,19 @@ Take £25 from my Savings pot
 Withdraw £10 from my Holiday pot to my personal account
 ```
 
-### list_transactions
+</details>
+
+<details>
+<summary>
+
+### 🧾 [list_transactions](https://docs.monzo.com/#list-transactions)
+
+</summary>
 
 Lists transactions for a specified account.
 
 Parameters:
+
 - `account_type` (optional): Type of account to list transactions for. Default is "personal"
 - `since` (optional): Start date for transactions in ISO 8601 format (e.g., "2025-05-20T00:00:00Z")
 - `before` (optional): End date for transactions in ISO 8601 format
@@ -167,6 +203,71 @@ Show me my recent transactions
 What transactions do I have from today?
 List all transactions from my joint account this month
 ```
+
+</details>
+
+<details>
+<summary>
+
+### 📖 [retrieve_transaction](https://docs.monzo.com/#retrieve-transaction)
+
+</summary>
+
+Retrieves details of a specific transaction.
+
+Parameters:
+
+- `transaction_id` (required): The ID of the transaction to retrieve
+- `expand` (optional): Additional data to include in the response. Default is "merchant"
+
+Example requests:
+
+```
+Show me the details of my last transaction
+What was the last transaction I made?
+```
+
+</details>
+
+<details>
+<summary>
+
+### 📝 [annotate_transaction](https://docs.monzo.com/#annotate-transaction)
+
+</summary>
+
+Edits the metadata of a transaction.
+
+Parameters:
+
+- `transaction_id` (required): The ID of the transaction to annotate
+- `metadata_key` (required): The key of the metadata to edit. Default is 'notes'
+- `metadata_value` (required): The new value for the metadata key. Empty values will remove the key
+- `delete_note` (optional): If set to true, the note will be deleted. Default is false
+
+Example requests:
+
+```
+Add a note to my last transaction saying "Dinner with friends"
+Remove the note from my last transaction
+```
+
+</details>
+
+## 📦 Missing Functions from the Monzo MCP present in the Monzo API
+
+- [Create feed item](https://docs.monzo.com/#create-feed-item)
+- [Upload Attachment](https://docs.monzo.com/#upload-attachment)
+- [Register Attachment](https://docs.monzo.com/#register-attachment)
+- [Deregister Attachement](https://docs.monzo.com/#deregister-attachment)
+- [Create Receipt](https://docs.monzo.com/#create-receipt)
+- [Retrieve Receipt](https://docs.monzo.com/#retrieve-receipt)
+- [Delete Receipt](https://docs.monzo.com/#delete-receipt)
+- [Registering a Webhook](https://docs.monzo.com/#registering-a-webhook)
+- [List Webhooks](https://docs.monzo.com/#list-webhooks)
+- [Deleting a Webhook](https://docs.monzo.com/#deleting-a-webhook)
+- [Transaction Created](https://docs.monzo.com/#transaction-created)
+- [General Payment Initiation for outside your own Monzo Account transfers](https://docs.monzo.com/#payment-initiation-services-api)
 
 ## ❓ FAQ
 
