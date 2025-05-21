@@ -50,6 +50,18 @@ def get_balance(account_type: str = "personal", total_balance: bool = False) -> 
                             - "rewards"
                             - "joint"
     total_balance (bool): If specifically asked for the total account balance, set this to True and it returns the total balance including flexible savings. Default is False.
+
+    Returns:
+    {
+        "balance": int,
+        "total_balance": int, # only if total_balance is True
+        "balance_including_flexible_savings": int, # only if total_balance is True
+        "currency": str,
+        "spend_today": int,
+        "local_currency": str,
+        "local_exchange_rate": float,
+        "local_spend": array,
+    }
     """
     account_type = account_type.lower()
     
@@ -99,6 +111,35 @@ def get_pots_information(account_type: str = "personal") -> dict:
                             - "flex"
                             - "rewards"
                             - "joint"
+
+    Returns:
+    {
+        "pots": [
+            {
+                "id": str,
+                "name": str,
+                "style": str,
+                "balance": int,
+                "currency": str,
+                "type": str,
+                "product_id": str,
+                "current_account_id": str,
+                "cover_image_url": str,
+                "isa_wrapper": str,
+                "round_up": bool,
+                "round_up_multiplier": int,
+                "is_tax_pot": bool,
+                "created": str (UTC ISO 8601),
+                "updated": str (UTC ISO 8601),
+                "deleted": bool,
+                "locked": bool,
+                "available_for_bills": bool,
+                "has_virtual_cards": bool,
+            },
+            ...
+        ]
+    }
+
     """
     account_type = account_type.lower()
     
@@ -150,7 +191,27 @@ def pot_deposit(
                             - "joint"
     
     Returns:
-    dict: The response from the Monzo API.
+    {
+        "id": str,
+        "name": str,
+        "style": str,
+        "balance": int,
+        "currency": str,
+        "type": str,
+        "product_id": str,
+        "current_account_id": str,
+        "cover_image_url": str,
+        "isa_wrapper": str,
+        "round_up": bool,
+        "round_up_multiplier": int,
+        "is_tax_pot": bool,
+        "created": str (UTC ISO 8601),
+        "updated": str (UTC ISO 8601),
+        "deleted": bool,
+        "locked": bool,
+        "available_for_bills": bool,
+        "has_virtual_cards": bool,
+    }
     """
     url = f"{pots_url}/{pot_id}/deposit"
 
@@ -199,7 +260,27 @@ def pot_withdraw(
                             - "joint"
     
     Returns:
-    dict: The response from the Monzo API.
+    {
+        "id": str,
+        "name": str,
+        "style": str,
+        "balance": int,
+        "currency": str,
+        "type": str,
+        "product_id": str,
+        "current_account_id": str,
+        "cover_image_url": str,
+        "isa_wrapper": str,
+        "round_up": bool,
+        "round_up_multiplier": int,
+        "is_tax_pot": bool,
+        "created": str (UTC ISO 8601),
+        "updated": str (UTC ISO 8601),
+        "deleted": bool,
+        "locked": bool,
+        "available_for_bills": bool,
+        "has_virtual_cards": bool,
+    }
     """
     url = f"{pots_url}/{pot_id}/withdraw"
 
@@ -247,6 +328,62 @@ def list_transactions(
     since (str): The start date for the transactions in ISO 8601 format. Default is None.
     before (str): The end date for the transactions in ISO 8601 format. Default is None.
     limit (int): The maximum number of transactions to return. Default is 1000.
+
+    Returns:
+    {
+        "transactions": [
+            {
+                "id": str,
+                "created": str (UTC ISO 8601),
+                "description": str,
+                "amount": int,
+                "fees": {},
+                "currency": str,
+                "merchant": str,
+                "merchant_feedback_uri": str,
+                "notes": str,
+                "metadata": {
+                    "external_id": str,
+                    "ledger_committed_timestamp_earliest": str (UTC ISO 8601),
+                    "ledger_committed_timestamp_latest": str (UTC ISO 8601),
+                    "ledger_insertion_id": str,
+                    "pot_account_id": str,
+                    "pot_id": str,
+                    "pot_withdrawal_id": str,
+                    "trigger": str,
+                    "user_id": str,
+                },
+                "labels": [],
+                "attachments": [],
+                "international": str,
+                "category": str,
+                "categories": {
+                    "transfers": int,
+                },
+                "is_load": bool,
+                "settled": str (UTC ISO 8601),
+                "local_amount": int,
+                "local_currency": str,
+                "updated": str (UTC ISO 8601),
+                "account_id": str,
+                "user_id": str,
+                "counterparty": {},
+                "scheme": str,
+                "dedupe_id": str,
+                "originator": bool,
+                "include_in_spending": bool,
+                "can_be_excluded_from_breakdown": bool,
+                "can_be_made_subscription": bool,
+                "can_split_the_bill": bool,
+                "can_add_to_tab": bool,
+                "can_match_transactions_in_categorization": bool,
+                "amount_is_pending": bool,
+                "atm_fees_detailed": {}
+                "parent_account_id": str,
+            },
+            ...
+        ]
+    }
     """
 
     account_type = account_type.lower()
@@ -288,6 +425,62 @@ def retrieve_transaction(
     Parameters:
     transaction_id (str): The ID of the transaction to retrieve.
     expand (str): Optional. The type of data to expand. Default is "merchant".
+
+    Returns:
+    {
+        "transaction": {
+            "id": str,
+            "created": str (UTC ISO 8601),
+            "description": str,
+            "amount": int,
+            "fees": {},
+            "currency": str,
+            "merchant": str,
+            "merchant_feedback_uri": str,
+            "notes": str,
+            "metadata": {
+                "external_id": str,
+                "ledger_committed_timestamp_earliest": str (UTC ISO 8601),
+                "ledger_committed_timestamp_latest": str (UTC ISO 8601),
+                "ledger_insertion_id": str,
+                "notes": str,
+                "pot_account_id": str,
+                "pot_deposit_id": str,
+                "pot_id": str,
+                "series_id": str,
+                "series_iteration_count": str,
+                "trigger": str,
+                "user_id": str,
+            },
+            "labels": [],
+            "attachments": [],
+            "international": str,
+            "category": str,
+            "categories": {
+                "transfers": int,
+            },
+            "is_load": bool,
+            "settled": str (UTC ISO 8601),
+            "local_amount": int,
+            "local_currency": str,
+            "updated": str (UTC ISO 8601),
+            "account_id": str,
+            "user_id": str,
+            "counterparty": {},
+            "scheme": str,
+            "dedupe_id": str,
+            "originator": bool,
+            "include_in_spending": bool,
+            "can_be_excluded_from_breakdown": bool,
+            "can_be_made_subscription": bool,
+            "can_split_the_bill": bool,
+            "can_add_to_tab": bool,
+            "can_match_transactions_in_categorization": bool,
+            "amount_is_pending": bool,
+            "atm_fees_detailed": {},
+            "parent_account_id": str,
+        }
+    }
     """
 
     headers = {
@@ -326,6 +519,60 @@ def annotate_transaction(
     metadata_key (str): The key to annotate. Default is "notes".
     metadata_value (str): The value to annotate. Default is an empty string.
     delete_note (bool): Whether to delete the note. Default is False to prevent accidental deletion of note.
+
+    Returns:
+    {
+        "transaction": {
+            "id": str,
+            "created": str (UTC ISO 8601),
+            "description": str,
+            "amount": int,
+            "fees": {},
+            "currency": str,
+            "merchant": str,
+            "merchant_feedback_uri": str,
+            "notes": str,
+            "metadata": {
+                "external_id": str,
+                "ledger_committed_timestamp_earliest": str (UTC ISO 8601),
+                "ledger_committed_timestamp_latest": str (UTC ISO 8601),
+                "ledger_insertion_id": str,
+                "notes": str,
+                "pot_account_id": str,
+                "pot_deposit_id": str,
+                "pot_id": str,
+                "trigger": str,
+                "user_id": str,
+            },
+            "labels": [],
+            "attachments": [],
+            "international": str,
+            "category": str,
+            "categories": {
+                "transfers": int,
+            },
+            "is_load": bool,
+            "settled": str (UTC ISO 8601),
+            "local_amount": int,
+            "local_currency": str,
+            "updated": str (UTC ISO 8601),
+            "account_id": str,
+            "user_id": str,
+            "counterparty": {},
+            "scheme": str,
+            "dedupe_id": str,
+            "originator": bool,
+            "include_in_spending": bool,
+            "can_be_excluded_from_breakdown": bool,
+            "can_be_made_subscription": bool,
+            "can_split_the_bill": bool,
+            "can_add_to_tab": bool,
+            "can_match_transactions_in_categorization": bool,
+            "amount_is_pending": bool,
+            "atm_fees_detailed": {},
+            "parent_account_id": str,
+        }
+    }
     """
 
     headers = {
