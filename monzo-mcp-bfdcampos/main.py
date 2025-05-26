@@ -9,26 +9,32 @@ load_dotenv()
 
 mcp = FastMCP("Monzo")
 
-access_token = os.getenv("MONZO_ACCESS_TOKEN")
-user_id = os.getenv("MONZO_USER_ID")
+access_token = {}
+access_token["b"] = os.getenv("B_MONZO_ACCESS_TOKEN")
+access_token["m"] = os.getenv("M_MONZO_ACCESS_TOKEN")
+
+user_id = {}
+user_id["b"] = os.getenv("B_MONZO_USER_ID")
+user_id["m"] = os.getenv("M_MONZO_USER_ID")
 
 last_hour = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-# Get all account IDs from environment variables
-uk_prepaid_personal_account_id = os.getenv("MONZO_UK_PREPAID_PERSONAL_ACCOUNT_ID")
-uk_retail_personal_account_id = os.getenv("MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID")
-uk_monzo_flex_personal_account_id = os.getenv("MONZO_UK_MONZO_FLEX_PERSONAL_ACCOUNT_ID")
-uk_rewards_personal_account_id = os.getenv("MONZO_UK_REWARDS_PERSONAL_ACCOUNT_ID")
-uk_retail_joint_joint_account_id = os.getenv("MONZO_UK_RETAIL_JOINT_JOINT_ACCOUNT_ID")
-
-# Create a dictionary of account types for easier reference
-account_types = {
-    "default": uk_retail_personal_account_id,
-    "personal": uk_retail_personal_account_id,
-    "prepaid": uk_prepaid_personal_account_id,
-    "flex": uk_monzo_flex_personal_account_id,
-    "rewards": uk_rewards_personal_account_id,
-    "joint": uk_retail_joint_joint_account_id
+account_types = {}
+account_types["b"] = {
+    "default": os.getenv("B_MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID"),
+    "personal": os.getenv("B_MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID"),
+    "prepaid": os.getenv("B_MONZO_UK_PREPAID_PERSONAL_ACCOUNT_ID"),
+    "flex": os.getenv("B_MONZO_UK_MONZO_FLEX_PERSONAL_ACCOUNT_ID"),
+    "rewards": os.getenv("B_MONZO_UK_REWARDS_PERSONAL_ACCOUNT_ID"),
+    "joint": os.getenv("B_MONZO_UK_RETAIL_JOINT_JOINT_ACCOUNT_ID")
+}
+account_types["m"] = {
+    "default": os.getenv("M_MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID"),
+    "personal": os.getenv("M_MONZO_UK_RETAIL_PERSONAL_ACCOUNT_ID"),
+    "prepaid": os.getenv("M_MONZO_UK_PREPAID_PERSONAL_ACCOUNT_ID"),
+    "flex": os.getenv("M_MONZO_UK_MONZO_FLEX_PERSONAL_ACCOUNT_ID"),
+    "rewards": None,  # Rewards account not available for Monzo UK
+    "joint": os.getenv("M_MONZO_UK_RETAIL_JOINT_JOINT_ACCOUNT_ID")
 }
 
 url = "https://api.monzo.com/"
@@ -38,20 +44,16 @@ pots_url = f"{url}pots"
 transactions_url = f"{url}transactions"
 
 @mcp.tool("balance")
-def get_balance(account_type: str = "personal", total_balance: bool = False) -> dict:
+def get_balance(account_type: str = "personal", user: str = "b", total_balance: bool = False) -> dict:
     """
     Returns the information about an account including the balance in the lower denomination 
     of the specified Monzo account's currency. I.e. GBP, the balance is in pence. E.g. 9155 is £91.55.
     
     Parameters:
     account_type (str): Type of account to check balance for. 
-                       Options:
-                            - "default" (default)
-                            - "personal"
-                            - "prepaid"
-                            - "flex"
-                            - "rewards"
-                            - "joint"
+                       Options: "personal", "prepaid", "flex", "rewards", "joint"
+                       Defaults to "personal".
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     total_balance (bool): If specifically asked for the total account balance, set this to True and it returns the total balance including flexible savings. Default is False.
 
     Returns:
@@ -66,15 +68,15 @@ def get_balance(account_type: str = "personal", total_balance: bool = False) -> 
         "local_spend": array,
     }
     """
-    account_type = account_type.lower()
-    
-    selected_account_id = account_types.get(account_type)
+    # Get token and account ID based on user and account_type
+    selected_token = access_token[user]
+    selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
-        selected_account_id = account_types["personal"]
+        raise Exception(f"Account type '{account_type}' not available for user '{user}'")
         
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/json",
     }
 
@@ -83,11 +85,10 @@ def get_balance(account_type: str = "personal", total_balance: bool = False) -> 
     }
 
     response = requests.get(balance_url, headers=headers, params=params)
+    response_data = response.json()
 
     if response.status_code != 200:
         raise Exception(f"Error: {response_data.get('error', 'Unknown error')}")
-
-    response_data = response.json()
 
     if total_balance:
         return response_data
@@ -98,7 +99,7 @@ def get_balance(account_type: str = "personal", total_balance: bool = False) -> 
     return response_data
 
 @mcp.tool("pots")
-def get_pots_information(account_type: str = "personal") -> dict:
+def get_pots_information(account_type: str = "personal", user: str = "b") -> dict:
     """
     Returns the pots information of the specified Monzo account including the balance
     in the lower denomination of the specified Monzo account's currency.
@@ -106,13 +107,9 @@ def get_pots_information(account_type: str = "personal") -> dict:
     
     Parameters:
     account_type (str): Type of account to check pots for. 
-                       Options:
-                            - "default" (default)
-                            - "personal"
-                            - "prepaid"
-                            - "flex"
-                            - "rewards"
-                            - "joint"
+                       Options: "personal", "prepaid", "flex", "rewards", "joint"
+                       Defaults to "personal".
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
 
     Returns:
     {
@@ -143,15 +140,15 @@ def get_pots_information(account_type: str = "personal") -> dict:
     }
 
     """
-    account_type = account_type.lower()
-    
-    selected_account_id = account_types.get(account_type)
+    # Get token and account ID based on user and account_type
+    selected_token = access_token[user]
+    selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
-        selected_account_id = account_types["personal"]
+        raise Exception(f"Account type '{account_type}' not available for user '{user}'")
         
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/json",
     }
     
@@ -173,7 +170,8 @@ def get_pots_information(account_type: str = "personal") -> dict:
 def pot_deposit(
         pot_id: str,
         amount: int,
-        account_type: str = "personal"
+        account_type: str = "personal",
+        user: str = "b"
 ) -> dict:
 
     """
@@ -184,13 +182,9 @@ def pot_deposit(
     amount (int): The amount to deposit in the lower denomination of the specified Monzo account's currency.
                   I.e. GBP, the amount is in pence. E.g. 9155 is £91.55.
     account_type (str): Type of account to deposit into. 
-                        Options:
-                            - "default" (default)
-                            - "personal"
-                            - "prepaid"
-                            - "flex"
-                            - "rewards"
-                            - "joint"
+                        Options: "personal", "prepaid", "flex", "rewards", "joint"
+                        Defaults to "personal".
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     
     Returns:
     {
@@ -220,6 +214,13 @@ def pot_deposit(
         "triggered_timestamp": str (UTC ISO 8601), # The timestamp of the deposit transaction useful to filter the list_transactions tool with `since: current_timestamp UTC minus an hour`
     }
     """
+    # Get token and account ID based on user and account_type
+    selected_token = access_token[user]
+    selected_account_id = account_types[user][account_type]
+    
+    if not selected_account_id:
+        raise Exception(f"Account type '{account_type}' not available for user '{user}'")
+
     url = f"{pots_url}/{pot_id}/deposit"
 
     triggered_by = "mcp"
@@ -227,12 +228,12 @@ def pot_deposit(
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
     
     data = {
-        "source_account_id": account_types.get(account_type, account_types["personal"]),
+        "source_account_id": selected_account_id,
         "amount": amount,
         "dedupe_id": dedupe_id,
     }
@@ -257,7 +258,8 @@ def pot_deposit(
 def pot_withdraw(
         pot_id: str,
         amount: int,
-        account_type: str = "personal"
+        account_type: str = "personal",
+        user: str = "b"
 ) -> dict:
     """
     Withdraw money from a pot.
@@ -267,13 +269,9 @@ def pot_withdraw(
     amount (int): The amount to withdraw in the lower denomination of the specified Monzo account's currency.
                   I.e. GBP, the amount is in pence. E.g. 9155 is £91.55.
     account_type (str): Type of account to withdraw from. 
-                        Options:
-                            - "default" (default)
-                            - "personal"
-                            - "prepaid"
-                            - "flex"
-                            - "rewards"
-                            - "joint"
+                        Options: "personal", "prepaid", "flex", "rewards", "joint"
+                        Defaults to "personal".
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     
     Returns:
     {
@@ -303,6 +301,13 @@ def pot_withdraw(
         "triggered_timestamp": str (UTC ISO 8601), # The timestamp of the withdrawal transaction useful to filter the list_transactions tool with `since: current_timestamp UTC minus an hour`
     }
     """
+    # Get token and account ID based on user and account_type
+    selected_token = access_token[user]
+    selected_account_id = account_types[user][account_type]
+    
+    if not selected_account_id:
+        raise Exception(f"Account type '{account_type}' not available for user '{user}'")
+
     url = f"{pots_url}/{pot_id}/withdraw"
 
     triggered_by = "mcp"
@@ -310,12 +315,12 @@ def pot_withdraw(
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
         
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
     
     data = {
-        "destination_account_id": account_types.get(account_type, account_types["personal"]),
+        "destination_account_id": selected_account_id,
         "amount": amount,
         "dedupe_id": dedupe_id,
     }
@@ -338,6 +343,7 @@ def pot_withdraw(
 @mcp.tool("list_transactions")
 def list_transactions(
         account_type: str = "personal",
+        user: str = "b",
         since: str = last_hour,
         before: str = None,
         limit: int = 1000
@@ -347,13 +353,9 @@ def list_transactions(
     
     Parameters:
     account_type (str): Type of account to list transactions for. 
-                        Options:
-                            - "default" (default)
-                            - "personal"
-                            - "prepaid"
-                            - "flex"
-                            - "rewards"
-                            - "joint"
+                        Options: "personal", "prepaid", "flex", "rewards", "joint"
+                        Defaults to "personal".
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     since (str): The start date for the transactions in ISO 8601 format. Default is the last hour.
     before (str): The end date for the transactions in ISO 8601 format. Default is None.
     limit (int): The maximum number of transactions to return. Default is 1000.
@@ -414,13 +416,15 @@ def list_transactions(
         ]
     }
     """
-
-    account_type = account_type.lower()
-
-    selected_account_id = account_types.get(account_type)
+    # Get token and account ID based on user and account_type
+    selected_token = access_token[user]
+    selected_account_id = account_types[user][account_type]
+    
+    if not selected_account_id:
+        raise Exception(f"Account type '{account_type}' not available for user '{user}'")
 
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/json",
     }
 
@@ -446,6 +450,7 @@ def list_transactions(
 @mcp.tool("retrieve_transaction")
 def retrieve_transaction(
         transaction_id: str,
+        user: str = "b",
         expand: str = "merchant"
     ) -> dict:
     """
@@ -453,6 +458,7 @@ def retrieve_transaction(
     
     Parameters:
     transaction_id (str): The ID of the transaction to retrieve.
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     expand (str): Optional. The type of data to expand. Default is "merchant".
 
     Returns:
@@ -513,7 +519,7 @@ def retrieve_transaction(
     """
 
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {access_token[user]}",
         "Content-Type": "application/json",
     }
 
@@ -533,6 +539,7 @@ def retrieve_transaction(
 @mcp.tool("annotate_transaction")
 def annotate_transaction(
         transaction_id: str,
+        user: str = "b",
         metadata_key: str = "notes",
         metadata_value: str = "",
         delete_note: bool = False
@@ -545,6 +552,7 @@ def annotate_transaction(
     
     Parameters:
     transaction_id (str): The ID of the transaction to annotate.
+    user (str): Which user's account to access ("b" or "m"). Defaults to "b".
     metadata_key (str): The key to annotate. Default is "notes".
     metadata_value (str): The value to annotate. Default is an empty string.
     delete_note (bool): Whether to delete the note. Default is False to prevent accidental deletion of note.
@@ -605,7 +613,7 @@ def annotate_transaction(
     """
 
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {access_token[user]}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
