@@ -346,7 +346,8 @@ def list_transactions(
         user: str = "b",
         since: str = last_hour,
         before: str = None,
-        limit: int = 1000
+        limit: int = 1000,
+        full_info: bool = False
     ) -> dict:
     """
     Returns a list of transactions for the specified Monzo account.
@@ -359,6 +360,7 @@ def list_transactions(
     since (str): The start date for the transactions in ISO 8601 format. Default is the last hour.
     before (str): The end date for the transactions in ISO 8601 format. Default is None.
     limit (int): The maximum number of transactions to return. Default is 1000.
+    full_info (bool): If True, returns all transaction fields. If False (default), returns only essential fields. Defaults to False.
 
     Returns:
     {
@@ -368,49 +370,49 @@ def list_transactions(
                 "created": str (UTC ISO 8601),
                 "description": str,
                 "amount": int,
-                "fees": {},
-                "currency": str,
+                "fees": {}, # returned only when full_info is True
+                "currency": str, # returned only when full_info is True
                 "merchant": str,
-                "merchant_feedback_uri": str,
+                "merchant_feedback_uri": str, # returned only when full_info is True
                 "notes": str,
                 "metadata": {
                     "external_id": str,
-                    "ledger_committed_timestamp_earliest": str (UTC ISO 8601),
-                    "ledger_committed_timestamp_latest": str (UTC ISO 8601),
-                    "ledger_insertion_id": str,
-                    "pot_account_id": str,
+                    "ledger_committed_timestamp_earliest": str (UTC ISO 8601), # returned only when full_info is True
+                    "ledger_committed_timestamp_latest": str (UTC ISO 8601), # returned only when full_info is True
+                    "ledger_insertion_id": str, # returned only when full_info is True
+                    "pot_account_id": str, # returned only when full_info is True
                     "pot_id": str,
-                    "pot_withdrawal_id": str,
-                    "trigger": str,
-                    "user_id": str,
+                    "pot_withdrawal_id": str, # returned only when full_info is True
+                    "trigger": str, # returned only when full_info is True
+                    "user_id": str, # returned only when full_info is True
                 },
-                "labels": [],
-                "attachments": [],
-                "international": str,
+                "labels": [], # returned only when full_info is True
+                "attachments": [], # returned only when full_info is True
+                "international": str, # returned only when full_info is True
                 "category": str,
-                "categories": {
+                "categories": { # returned only when full_info is True
                     "transfers": int,
                 },
                 "is_load": bool,
                 "settled": str (UTC ISO 8601),
-                "local_amount": int,
-                "local_currency": str,
-                "updated": str (UTC ISO 8601),
+                "local_amount": int, # returned only when full_info is True
+                "local_currency": str, # returned only when full_info is True
+                "updated": str (UTC ISO 8601), # returned only when full_info is True
                 "account_id": str,
-                "user_id": str,
+                "user_id": str, # returned only when full_info is True
                 "counterparty": {},
-                "scheme": str,
+                "scheme": str, # returned only when full_info is True
                 "dedupe_id": str,
-                "originator": bool,
+                "originator": bool, # returned only when full_info is True
                 "include_in_spending": bool,
-                "can_be_excluded_from_breakdown": bool,
+                "can_be_excluded_from_breakdown": bool, # returned only when full_info is True
                 "can_be_made_subscription": bool,
-                "can_split_the_bill": bool,
-                "can_add_to_tab": bool,
-                "can_match_transactions_in_categorization": bool,
+                "can_split_the_bill": bool, # returned only when full_info is True
+                "can_add_to_tab": bool, # returned only when full_info is True
+                "can_match_transactions_in_categorization": bool, # returned only when full_info is True
                 "amount_is_pending": bool,
-                "atm_fees_detailed": {}
-                "parent_account_id": str,
+                "atm_fees_detailed": {} # returned only when full_info is True
+                "parent_account_id": str, # returned only when full_info is True
             },
             ...
         ]
@@ -444,7 +446,35 @@ def list_transactions(
     response_data = response.json()
 
     transactions = response_data.get("transactions", [])
-
+    
+    # If full_info is False, filter to only essential fields
+    if not full_info:
+        filtered_transactions = []
+        for txn in transactions:
+            filtered_txn = {
+                "id": txn.get("id"),
+                "created": txn.get("created"),
+                "description": txn.get("description"),
+                "amount": txn.get("amount"),
+                "merchant": txn.get("merchant"),
+                "category": txn.get("category"),
+                "notes": txn.get("notes"),
+                "metadata": {
+                    "external_id": txn.get("metadata", {}).get("external_id"),
+                    "pot_id": txn.get("metadata", {}).get("pot_id"),
+                },
+                "account_id": txn.get("account_id"),
+                "counterparty": txn.get("counterparty"),
+                "dedupe_id": txn.get("dedupe_id"),
+                "is_load": txn.get("is_load"),
+                "settled": txn.get("settled"),
+                "include_in_spending": txn.get("include_in_spending"),
+                "can_be_made_subscription": txn.get("can_be_made_subscription"),
+                "amount_is_pending": txn.get("amount_is_pending"),
+            }
+            filtered_transactions.append(filtered_txn)
+        return filtered_transactions
+    
     return transactions
 
 @mcp.tool("retrieve_transaction")
