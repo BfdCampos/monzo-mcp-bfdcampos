@@ -1,18 +1,151 @@
 from mcp.server.fastmcp import FastMCP
 import requests
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 import os
 import uuid
 import datetime
+import json
+from threading import Lock
 
 load_dotenv()
 
 mcp = FastMCP("Monzo")
 
-access_token = {}
-access_token["b"] = os.getenv("B_MONZO_ACCESS_TOKEN")
-access_token["m"] = os.getenv("M_MONZO_ACCESS_TOKEN")
+# Token management with thread safety
+token_lock = Lock()
+token_cache = {}
 
+def refresh_access_token(user):
+    """Refresh the access token using the refresh token"""
+    refresh_token = os.getenv(f"{user.upper()}_MONZO_REFRESH_TOKEN")
+    client_id = os.getenv("MONZO_CLIENT_ID")
+    client_secret = os.getenv("MONZO_CLIENT_SECRET")
+    
+    if not refresh_token:
+        raise Exception(f"No refresh token available for user {user}. Run setup_oauth.py first.")
+    
+    if not client_id or not client_secret:
+        raise Exception(f"Missing OAuth client credentials. Check MONZO_CLIENT_ID and MONZO_CLIENT_SECRET in .env")
+    
+    token_url = "https://api.monzo.com/oauth2/token"
+    data = {
+        'grant_type': 'refresh_token',
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'refresh_token': refresh_token
+    }
+    
+    response = requests.post(token_url, data=data)
+    
+    if response.status_code != 200:
+        error_msg = f"Token refresh failed with status {response.status_code}: {response.text}"
+        # Try to parse error details
+        try:
+            error_data = response.json()
+            if 'error' in error_data:
+                error_msg = f"OAuth error: {error_data.get('error')} - {error_data.get('error_description', 'No description')}"
+        except:
+            pass
+        raise Exception(error_msg)
+    
+    tokens = response.json()
+    
+    # Update .env file with new tokens
+    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    set_key(env_file, f"{user.upper()}_MONZO_ACCESS_TOKEN", tokens['access_token'])
+    
+    if 'refresh_token' in tokens:
+        set_key(env_file, f"{user.upper()}_MONZO_REFRESH_TOKEN", tokens['refresh_token'])
+    
+    return tokens['access_token']
+
+def get_access_token(user):
+    """Get access token, refreshing if necessary"""
+    with token_lock:
+        # Check cache first
+        if user in token_cache:
+            return token_cache[user]
+        
+        # Try to get token from environment
+        access_token = os.getenv(f"{user.upper()}_MONZO_ACCESS_TOKEN")
+        
+        if not access_token:
+            # Check if user has OAuth setup (refresh token)
+            refresh_token = os.getenv(f"{user.upper()}_MONZO_REFRESH_TOKEN")
+            if refresh_token:
+                # User has OAuth, try to refresh
+                access_token = refresh_access_token(user)
+            else:
+                # User doesn't have OAuth, check for legacy static tokens
+                # Try various token env var formats
+                for token_var in [f"MONZO_{user.upper()}_TOKEN_PERSONAL", 
+                                 f"MONZO_{user.upper()}_TOKEN", 
+                                 f"{user.upper()}_MONZO_TOKEN"]:
+                    access_token = os.getenv(token_var)
+                    if access_token:
+                        break
+                
+                if not access_token:
+                    raise Exception(f"No access token found for user {user}. Please run setup_oauth.py or set {user.upper()}_MONZO_ACCESS_TOKEN")
+        
+        # Cache the token
+        token_cache[user] = access_token
+        return access_token
+
+def make_authenticated_request(url, user, method='GET', **kwargs):
+    """Make an authenticated request, handling token refresh if needed"""
+    max_retries = 2
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            access_token = get_access_token(user)
+            headers = kwargs.get('headers', {})
+            headers['Authorization'] = f"Bearer {access_token}"
+            kwargs['headers'] = headers
+            
+            if method == 'GET':
+                response = requests.get(url, **kwargs)
+            elif method == 'POST':
+                response = requests.post(url, **kwargs)
+            elif method == 'PUT':
+                response = requests.put(url, **kwargs)
+            elif method == 'PATCH':
+                response = requests.patch(url, **kwargs)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+            
+            # Check if token expired
+            if response.status_code == 401 and attempt < max_retries - 1:
+                # Clear cache and try to refresh token
+                with token_lock:
+                    token_cache.pop(user, None)
+                
+                # Check if user has OAuth setup
+                refresh_token = os.getenv(f"{user.upper()}_MONZO_REFRESH_TOKEN")
+                if refresh_token:
+                    try:
+                        access_token = refresh_access_token(user)
+                        token_cache[user] = access_token
+                        continue
+                    except Exception as refresh_error:
+                        last_error = f"Token refresh failed: {str(refresh_error)}"
+                        raise Exception(last_error)
+                else:
+                    last_error = f"Authentication failed for user {user}. No refresh token available."
+                    raise Exception(last_error)
+            
+            return response
+            
+        except Exception as e:
+            last_error = str(e)
+            if attempt < max_retries - 1 and "Token refresh failed" not in str(e):
+                continue
+            raise Exception(last_error if last_error else str(e))
+    
+    return response
+
+# Initialize user data
 user_id = {}
 user_id["b"] = os.getenv("B_MONZO_USER_ID")
 user_id["m"] = os.getenv("M_MONZO_USER_ID")
@@ -68,23 +201,17 @@ def get_balance(account_type: str = "personal", user: str = "b", total_balance: 
         "local_spend": array,
     }
     """
-    # Get token and account ID based on user and account_type
-    selected_token = access_token[user]
+    # Get account ID based on user and account_type
     selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
         raise Exception(f"Account type '{account_type}' not available for user '{user}'")
-        
-    headers = {
-        "Authorization": f"Bearer {selected_token}",
-        "Content-Type": "application/json",
-    }
 
     params = {
         "account_id": selected_account_id,
     }
 
-    response = requests.get(balance_url, headers=headers, params=params)
+    response = make_authenticated_request(balance_url, user, method='GET', params=params)
     response_data = response.json()
 
     if response.status_code != 200:
@@ -140,23 +267,17 @@ def get_pots_information(account_type: str = "personal", user: str = "b") -> dic
     }
 
     """
-    # Get token and account ID based on user and account_type
-    selected_token = access_token[user]
+    # Get account ID based on user and account_type
     selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
         raise Exception(f"Account type '{account_type}' not available for user '{user}'")
-        
-    headers = {
-        "Authorization": f"Bearer {selected_token}",
-        "Content-Type": "application/json",
-    }
     
     params = {
         "current_account_id": selected_account_id,
     }
 
-    response = requests.get(pots_url, headers=headers, params=params)
+    response = make_authenticated_request(pots_url, user, method='GET', params=params)
     response_data = response.json()
 
     if response.status_code != 200:
@@ -214,8 +335,7 @@ def pot_deposit(
         "triggered_timestamp": str (UTC ISO 8601), # The timestamp of the deposit transaction useful to filter the list_transactions tool with `since: current_timestamp UTC minus an hour`
     }
     """
-    # Get token and account ID based on user and account_type
-    selected_token = access_token[user]
+    # Get account ID based on user and account_type
     selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
@@ -226,9 +346,8 @@ def pot_deposit(
     triggered_by = "mcp"
 
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
-        
+    
     headers = {
-        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
     
@@ -238,7 +357,7 @@ def pot_deposit(
         "dedupe_id": dedupe_id,
     }
 
-    response = requests.put(url, headers=headers, data=data)
+    response = make_authenticated_request(url, user, method='PUT', headers=headers, data=data)
     
     if response.status_code != 200:
         raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
@@ -301,8 +420,7 @@ def pot_withdraw(
         "triggered_timestamp": str (UTC ISO 8601), # The timestamp of the withdrawal transaction useful to filter the list_transactions tool with `since: current_timestamp UTC minus an hour`
     }
     """
-    # Get token and account ID based on user and account_type
-    selected_token = access_token[user]
+    # Get account ID based on user and account_type
     selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
@@ -313,9 +431,8 @@ def pot_withdraw(
     triggered_by = "mcp"
 
     dedupe_id = f"{triggered_by}_{str(uuid.uuid4())}"
-        
+    
     headers = {
-        "Authorization": f"Bearer {selected_token}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
     
@@ -325,7 +442,7 @@ def pot_withdraw(
         "dedupe_id": dedupe_id,
     }
 
-    response = requests.put(url, headers=headers, data=data)
+    response = make_authenticated_request(url, user, method='PUT', headers=headers, data=data)
     
     if response.status_code != 200:
         raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
@@ -418,17 +535,11 @@ def list_transactions(
         ]
     }
     """
-    # Get token and account ID based on user and account_type
-    selected_token = access_token[user]
+    # Get account ID based on user and account_type
     selected_account_id = account_types[user][account_type]
     
     if not selected_account_id:
         raise Exception(f"Account type '{account_type}' not available for user '{user}'")
-
-    headers = {
-        "Authorization": f"Bearer {selected_token}",
-        "Content-Type": "application/json",
-    }
 
     params = {
         "account_id": selected_account_id,
@@ -438,7 +549,7 @@ def list_transactions(
         "expand[]": "merchant",
     }
 
-    response = requests.get(transactions_url, headers=headers, params=params)
+    response = make_authenticated_request(transactions_url, user, method='GET', params=params)
 
     if response.status_code != 200:
         raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
@@ -548,16 +659,11 @@ def retrieve_transaction(
     }
     """
 
-    headers = {
-        "Authorization": f"Bearer {access_token[user]}",
-        "Content-Type": "application/json",
-    }
-
     params = {
         "expand[]": expand,
     }
 
-    response = requests.get(f"{transactions_url}/{transaction_id}", headers=headers, params=params)
+    response = make_authenticated_request(f"{transactions_url}/{transaction_id}", user, method='GET', params=params)
 
     if response.status_code != 200:
         raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
@@ -643,7 +749,6 @@ def annotate_transaction(
     """
 
     headers = {
-        "Authorization": f"Bearer {access_token[user]}",
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
@@ -651,7 +756,7 @@ def annotate_transaction(
 
     data[f"metadata[{metadata_key}]"] = metadata_value
 
-    response = requests.patch(f"{transactions_url}/{transaction_id}", headers=headers, data=data)
+    response = make_authenticated_request(f"{transactions_url}/{transaction_id}", user, method='PATCH', headers=headers, data=data)
 
     if response.status_code != 200:
         raise Exception(f"Error: {response.json().get('error', 'Unknown error')}")
