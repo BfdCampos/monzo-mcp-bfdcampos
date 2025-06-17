@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides access to your Monzo banking
 
 ## 🪧 Demo
 
-https://github.com/user-attachments/assets/ca3f9558-bc4b-460f-8658-99674f9c16b7
+<https://github.com/user-attachments/assets/ca3f9558-bc4b-460f-8658-99674f9c16b7>
 
 <details>
 <summary>
@@ -102,7 +102,7 @@ Add the server to your Claude Desktop configuration file located at `~/Library/A
 <details>
 <summary>
 
-### 💷 [balance](https://docs.monzo.com/#balance)
+### 💷 balance: [link to official docs](https://docs.monzo.com/#balance)
 
 </summary>
 
@@ -126,7 +126,7 @@ What's the balance of my flex account?
 <details>
 <summary>
 
-### 🍯 [pots](https://docs.monzo.com/#pots)
+### 🍯 pots: [link to official docs](https://docs.monzo.com/#pots)
 
 </summary>
 
@@ -149,7 +149,7 @@ How much money do I have in my "Savings" pot?
 <details>
 <summary>
 
-### 🪙 [pot_deposit](https://docs.monzo.com/#deposit-into-a-pot)
+### 🪙 pot_deposit: [link to official docs](https://docs.monzo.com/#deposit-into-a-pot)
 
 </summary>
 
@@ -173,7 +173,7 @@ Move £10 from my personal account to my Holiday pot
 <details>
 <summary>
 
-### 🏧 [pot_withdraw](https://docs.monzo.com/#withdraw-from-a-pot)
+### 🏧 pot_withdraw: [link to official docs](https://docs.monzo.com/#withdraw-from-a-pot)
 
 </summary>
 
@@ -197,7 +197,7 @@ Withdraw £10 from my Holiday pot to my personal account
 <details>
 <summary>
 
-### 🧾 [list_transactions](https://docs.monzo.com/#list-transactions)
+### 🧾 list_transactions: [link to official docs](https://docs.monzo.com/#list-transactions)
 
 </summary>
 
@@ -223,7 +223,7 @@ List all transactions from my joint account this month
 <details>
 <summary>
 
-### 📖 [retrieve_transaction](https://docs.monzo.com/#retrieve-transaction)
+### 📖 retrieve_transaction: [link to official docs](https://docs.monzo.com/#retrieve-transaction)
 
 </summary>
 
@@ -246,7 +246,7 @@ What was the last transaction I made?
 <details>
 <summary>
 
-### 📝 [annotate_transaction](https://docs.monzo.com/#annotate-transaction)
+### 📝 annotate_transaction: [link to official docs](https://docs.monzo.com/#annotate-transaction)
 
 </summary>
 
